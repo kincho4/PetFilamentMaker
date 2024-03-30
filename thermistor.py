@@ -1,44 +1,40 @@
 import RPi.GPIO as GPIO
 import time
 
-# Define constants
-R1 = 10000  # Resistance at 25°C, in ohms
-B = 3950    # Beta value of the thermistor
-T0 = 298.15 # Temperature at 25°C, in Kelvin
+# Thermistor parameters
+R0 = 10000  # Resistance at 25 degrees Celsius
+beta = 3950  # Beta value of the thermistor
 
-# Pin configuration
-therm_pin = 18  # Assuming the thermistor is connected to GPIO 18
+# GPIO pin
+therm_pin = 12  # Use GPIO18 (pin 12) for thermistor input
 
-# Setup GPIO
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(therm_pin, GPIO.IN)
+def get_temp():
+    # Setup GPIO
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(therm_pin, GPIO.IN)
 
-def get_temp(R, B, T0, pin):
-    # Read analog value from thermistor
-    adc_value = GPIO.input(pin)
-    
-    # Convert ADC value to resistance
-    R2 = R1 * (1023.0 / adc_value - 1.0)
-    
-    # Convert resistance to temperature using Steinhart-Hart equation
-    temp = 1.0 / (1.0 / T0 + 1.0 / B * (1.0 / (R2 / R) - 1.0))
-    
-    # Convert temperature from Kelvin to Celsius
-    temp -= 273.15
-    
-    return temp
+    # Read analog value
+    analog_value = 0
+    for i in range(10):
+        analog_value += GPIO.input(therm_pin)
+        time.sleep(0.01)
+    analog_value /= 10.0
+
+    # Calculate resistance of the thermistor
+    R = (analog_value * R0) / (1023 - analog_value)
+
+    # Calculate temperature in Celsius
+    T = 1 / (1 / 298.15 + 1 / beta * (1 / (273.15 + 25) - 1 / (R / 1000)))
+    T -= 273.15  # Convert Kelvin to Celsius
+
+    return T
 
 try:
     while True:
-        # Get temperature
-        temp = get_temp(R1, B, T0, therm_pin)
-        
-        # Print temperature
-        print("Thermistor temperature: {:.2f} °C".format(temp))
+        temp = get_temp()
+        print("Thermistor temperature:", temp)
         print("----------------------")
-        
-        # Wait for next measurement
-        time.sleep(0.2)
+        time.sleep(1)  # Wait 1 second before next measurement
 
 except KeyboardInterrupt:
     GPIO.cleanup()
