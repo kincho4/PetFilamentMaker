@@ -3,7 +3,7 @@ import time
 import math
 
 # Set the GPIO pin number where the NTC thermistor is connected
-NTC_PIN = 15
+NTC_PIN = 17
 
 def read_adc():
     adc_value = 0
@@ -30,21 +30,27 @@ def read_adc():
     return adc_value
 
 def convert_to_temperature(adc_value):
-    R = 10 * 1000 * (1023 / adc_value - 1)
-    T0 = 25
-    R0 = 10 * 1000
-    B = 3950
-    T = 1 / (1 / (T0 + 273.15) + (1 / B) * math.log(R / R0))
-    T -= 273.15
-    return T
+    try:
+        R = 10 * 1000 * (1023 / adc_value - 1)
+        T0 = 25
+        R0 = 10 * 1000
+        B = 3950
+        T = 1 / (1 / (T0 + 273.15) + (1 / B) * math.log(R / R0))
+        T -= 273.15
+        return T
+    except ZeroDivisionError:
+        return -1  # Handle division by zero error
 
 def main():
-    GPIO.setmode(GPIO.BOARD)
+    GPIO.setmode(GPIO.BCM)
     try:
         while True:
             adc_value = read_adc()
             temperature = convert_to_temperature(adc_value)
-            print("Temperature:", temperature, "°C")
+            if temperature != -1:
+                print("Temperature:", temperature, "°C")
+            else:
+                print("Error: Division by zero")
             time.sleep(1)
     except KeyboardInterrupt:
         GPIO.cleanup()
