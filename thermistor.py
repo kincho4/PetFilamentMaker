@@ -1,25 +1,53 @@
 import RPi.GPIO as GPIO
 import time
+import math
 
-# GPIO pin
-therm_pin = 12  # Use GPIO18 (pin 12) for thermistor input
+# Set the GPIO pin number where the NTC thermistor is connected
+NTC_PIN = 17
 
-def get_analog_reading():
-    # Setup GPIO
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(therm_pin, GPIO.IN)
+def read_adc():
+    adc_value = 0
+    GPIO.setup(NTC_PIN, GPIO.OUT)
+    GPIO.output(NTC_PIN, GPIO.LOW)
+    time.sleep(0.1)
+    GPIO.setup(NTC_PIN, GPIO.IN)
 
-    # Read analog value
-    analog_value = GPIO.input(therm_pin)
+    while GPIO.input(NTC_PIN) == GPIO.LOW:
+        continue
+    while GPIO.input(NTC_PIN) == GPIO.HIGH:
+        continue
 
-    return analog_value
+    for i in range(8):
+        GPIO.setup(NTC_PIN, GPIO.OUT)
+        GPIO.output(NTC_PIN, GPIO.LOW)
+        time.sleep(0.00001)
+        GPIO.setup(NTC_PIN, GPIO.IN)
+        adc_value <<= 1
+        if GPIO.input(NTC_PIN) == GPIO.HIGH:
+            adc_value |= 0x1
+        time.sleep(0.00001)
 
-try:
-    while True:
-        analog_value = get_analog_reading()
-        print("Raw analog reading:", analog_value)
+    return adc_value
 
-        time.sleep(1)  # Wait 1 second before next measurement
+def convert_to_temperature(adc_value):
+    R = 10 * 1000 * (1023 / adc_value - 1)
+    T0 = 25
+    R0 = 10 * 1000
+    B = 3950
+    T = 1 / (1 / (T0 + 273.15) + (1 / B) * math.log(R / R0))
+    T -= 273.15
+    return T
 
-except KeyboardInterrupt:
-    GPIO.cleanup()
+def main():
+    GPIO.setmode(GPIO.BCM)
+    try:
+        while True:
+            adc_value = read_adc()
+            temperature = convert_to_temperature(adc_value)
+            print("Temperature:", temperature, "°C")
+            time.sleep(1)
+    except KeyboardInterrupt:
+        GPIO.cleanup()
+
+if __name__ == "__main__":
+    main()
