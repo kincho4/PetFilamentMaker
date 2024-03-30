@@ -16,25 +16,24 @@ GPIO.setup(dir_pin, GPIO.OUT)
 pwm = GPIO.PWM(step_pin, 50)  # 50 Hz frequency
 pwm.start(0)  # Start PWM with duty cycle 0
 
-def set_angle(angle):
-    # Convert angle to duty cycle
-    duty_cycle = angle / 18.0 + 2.5
-    pwm.ChangeDutyCycle(duty_cycle)
-    time.sleep(0.5)  # Give time for the servo to reach the desired position
+def rotate_motor(direction):
+    # Set direction
+    GPIO.output(dir_pin, direction)
+
+    # Generate pulses to rotate motor
+    for _ in range(200):  # 200 steps for one revolution
+        GPIO.output(step_pin, GPIO.HIGH)
+        time.sleep(0.005)  # Adjust delay for desired speed
+        GPIO.output(step_pin, GPIO.LOW)
+        time.sleep(0.005)  # Adjust delay for desired speed
 
 try:
     while True:
-        # Move servo to 0 degrees
-        set_angle(0)
-        time.sleep(1)
+        # Rotate motor clockwise
+        rotate_motor(GPIO.HIGH)
 
-        # Move servo to 90 degrees
-        set_angle(90)
-        time.sleep(1)
-
-        # Move servo to 180 degrees
-        set_angle(180)
-        time.sleep(1)
+        # Rotate motor counterclockwise
+        rotate_motor(GPIO.LOW)
 
 except KeyboardInterrupt:
     pass
