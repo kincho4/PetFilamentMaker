@@ -20,6 +20,12 @@ def get_temp():
         time.sleep(0.01)
     analog_value /= 10.0
 
+    print("Raw analog reading:", analog_value)  # Debug statement
+
+    # Check if analog reading is at maximum
+    if analog_value == 1023:
+        return None
+
     # Calculate resistance of the thermistor
     R = (analog_value * R0) / (1023 - analog_value)
 
@@ -32,8 +38,11 @@ def get_temp():
 try:
     while True:
         temp = get_temp()
-        print("Thermistor temperature:", temp)
-        print("----------------------")
+        if temp is not None:
+            print("Thermistor temperature:", temp)
+            print("----------------------")
+        else:
+            print("Analog reading at maximum, check wiring or thermistor")
         time.sleep(1)  # Wait 1 second before next measurement
 
 except KeyboardInterrupt:
