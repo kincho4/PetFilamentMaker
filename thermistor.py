@@ -3,7 +3,7 @@ import time
 import math
 
 # Set the GPIO pin number where the NTC thermistor is connected
-NTC_PIN = 17
+NTC_PIN = 15
 
 def read_adc():
     adc_value = 0
@@ -39,7 +39,7 @@ def convert_to_temperature(adc_value):
     return T
 
 def main():
-    GPIO.setmode(GPIO.BCM)
+    GPIO.setmode(GPIO.BOARD)
     try:
         while True:
             adc_value = read_adc()
